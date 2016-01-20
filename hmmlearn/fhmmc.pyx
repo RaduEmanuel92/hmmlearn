@@ -54,7 +54,6 @@ def _compute_logeta(int n_observations, int n_chains, int n_states, state_combin
     cdef int t, chain_idx, i, j, idx
     cdef int n_state_combinations = n_states ** n_chains
     state_combination_shape = tuple([n_states for _ in xrange(n_chains)])
-    cdef dtype_t logprob = _logsumexp(in_fwdlattice[-1])  # TODO: is this correct?
     partial_state_combinations = [list(x) for x in list(itertools.product(np.arange(n_states), repeat=n_chains - 1))]
     cdef int n_partial_state_combinations = n_states ** (n_chains - 1)
 
@@ -75,7 +74,8 @@ def _compute_logeta(int n_observations, int n_chains, int n_states, state_combin
                                   + framelogprob[t + 1][j_state_combination]
                                   + bwdlattice[t + 1][j_state_combination])
                         work_buffer[idx] = value
-                    logeta[t, chain_idx, i, j] = _logsumexp(work_buffer) - logprob
+                    logeta[t, chain_idx, i, j] = _logsumexp(work_buffer)
+            logeta[t, chain_idx] -= _logsumexp(logeta[t, chain_idx].flatten())
 
 
 @cython.boundscheck(False)
